@@ -39,8 +39,8 @@ sudo apt update
 sudo apt install -y git python3-gpiozero python3-lgpio python3-flask
 
 # 1. GitHub'daki repoyu klonla
-git clone https://github.com/FurkanTheAdmin/RepairSensor.git /home/pi/Raspberry
-cd /home/pi/Raspberry
+git clone https://github.com/FurkanTheAdmin/RepairSensor.git
+cd RepairSensor
 
 # 2. Servis olarak kur (arka planda çalışsın, Pi yeniden başlayınca otomatik açılsın)
 sudo cp deploy/slot-monitor.service /etc/systemd/system/
@@ -53,11 +53,10 @@ sudo systemctl status slot-monitor
 
 Web arayüzü `http://<pi-ip>:8080` adresinde açılır.
 
-Not: `/home/pi/Raspberry` ve `User=pi` satırları, imaj yazarken kullanıcı adı
-olarak `pi` seçtiğinizi varsayar. Farklı bir kullanıcı adı belirlediyseniz
-[deploy/slot-monitor.service](deploy/slot-monitor.service) içindeki `User=`
-ve `WorkingDirectory=` satırlarını ve yukarıdaki `git clone` hedef yolunu ona
-göre değiştirin.
+Bu depoda `User=rasp` ve `/home/rasp/RepairSensor` kullanıcı adı olarak
+`rasp` seçildiği için böyle ayarlandı. Farklı bir kullanıcı adıyla
+kuruyorsanız [deploy/slot-monitor.service](deploy/slot-monitor.service)
+içindeki `User=` ve `WorkingDirectory=` satırlarını ona göre değiştirin.
 
 ## Kod güncellendiğinde Pi'de nasıl "pull" edilir
 
@@ -67,8 +66,8 @@ Pi'ye SSH erişimi olan kişi şunlardan birini çalıştırır:
 **Kısa yol — hazır script:**
 
 ```bash
-ssh pi@<pi-ip>
-cd /home/pi/Raspberry
+ssh rasp@<pi-ip>
+cd /home/rasp/RepairSensor
 bash deploy/update.sh
 ```
 
@@ -78,8 +77,8 @@ başlatır.
 **Manuel adımlar (script kullanmadan aynısı):**
 
 ```bash
-ssh pi@<pi-ip>
-cd /home/pi/Raspberry
+ssh rasp@<pi-ip>
+cd /home/rasp/RepairSensor
 git pull
 sudo systemctl restart slot-monitor
 sudo systemctl status slot-monitor

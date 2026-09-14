@@ -2,7 +2,7 @@
 # Run this ON THE PI (via SSH) to pull the latest code and restart the service.
 set -euo pipefail
 
-REPO_DIR="/home/pi/Raspberry"
+REPO_DIR="/home/rasp/RepairSensor"
 SERVICE="slot-monitor"
 
 cd "$REPO_DIR"

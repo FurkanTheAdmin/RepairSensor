@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/Raspberry
+User=rasp
+WorkingDirectory=/home/rasp/RepairSensor
 ExecStart=/usr/bin/python3 app.py
 Restart=on-failure
 RestartSec=3
