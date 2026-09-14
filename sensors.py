@@ -54,9 +54,10 @@ class SlotState:
     name: str
     occupied: bool = False
     distance_m: Optional[float] = None
-    since: Optional[float] = None  # time.time() when it became occupied
-    _pending: bool = field(default=False, repr=False)
-    _pending_count: int = field(default=0, repr=False)
+    since: Optional[float] = None  # time.time() when occupancy was confirmed
+    history: list = field(default_factory=list)  # most recent finished repair first
+    _first_seen: Optional[float] = field(default=None, repr=False)  # start of current in-range streak
+    _first_absent: Optional[float] = field(default=None, repr=False)  # start of current out-of-range streak
 
     def to_dict(self):
         elapsed = int(time.time() - self.since) if self.occupied and self.since else 0
@@ -66,6 +67,7 @@ class SlotState:
             "occupied": self.occupied,
             "distance_cm": round(self.distance_m * 100, 1) if self.distance_m is not None else None,
             "elapsed_seconds": elapsed,
+            "history_seconds": [h["duration_seconds"] for h in self.history],
         }
 
 
@@ -116,23 +118,29 @@ class SlotMonitor:
             self._stop.wait(config.POLL_INTERVAL_S)
 
     def _update_slot(self, sid, distance_m):
+        now = time.time()
         with self._lock:
             state = self._states[sid]
             state.distance_m = distance_m
 
-            raw_occupied = distance_m is not None and distance_m < config.OCCUPIED_THRESHOLD_M
+            in_range = distance_m is not None and distance_m < config.OCCUPIED_THRESHOLD_M
 
-            if raw_occupied == state.occupied:
-                state._pending_count = 0
-                return
-
-            if raw_occupied == state._pending:
-                state._pending_count += 1
+            if in_range:
+                state._first_absent = None
+                if state._first_seen is None:
+                    state._first_seen = now
+                if not state.occupied and (now - state._first_seen) >= config.CONFIRM_SECONDS:
+                    state.occupied = True
+                    state.since = state._first_seen
             else:
-                state._pending = raw_occupied
-                state._pending_count = 1
-
-            if state._pending_count >= config.DEBOUNCE_READINGS:
-                state.occupied = raw_occupied
-                state.since = time.time() if raw_occupied else None
-                state._pending_count = 0
+                state._first_seen = None
+                if state.occupied:
+                    if state._first_absent is None:
+                        state._first_absent = now
+                    elif (now - state._first_absent) >= config.EXIT_CONFIRM_SECONDS:
+                        duration = int(now - state.since) if state.since else 0
+                        state.history.insert(0, {"duration_seconds": duration, "ended_at": now})
+                        state.history = state.history[: config.HISTORY_SIZE]
+                        state.occupied = False
+                        state.since = None
+                        state._first_absent = None

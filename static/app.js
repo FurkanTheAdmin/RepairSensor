@@ -19,6 +19,21 @@ async function refresh() {
         : "-";
       el.querySelector(".distance").textContent =
         slot.distance_cm != null ? `${slot.distance_cm} cm` : "sensör yok";
+
+      const historyList = el.querySelector(".history-list");
+      historyList.innerHTML = "";
+      if (slot.history_seconds.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "henüz kayıt yok";
+        li.className = "history-empty";
+        historyList.appendChild(li);
+      } else {
+        for (const seconds of slot.history_seconds) {
+          const li = document.createElement("li");
+          li.textContent = formatElapsed(seconds);
+          historyList.appendChild(li);
+        }
+      }
     }
   } catch (err) {
     console.error("status fetch failed", err);

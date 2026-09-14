@@ -6,6 +6,11 @@ After=network.target
 Type=simple
 User=rasp
 WorkingDirectory=/home/rasp/RepairSensor
+# Tune without touching code: edit these, then
+# sudo systemctl daemon-reload && sudo systemctl restart slot-monitor
+Environment=OCCUPIED_THRESHOLD_M=0.5
+Environment=CONFIRM_SECONDS=20
+Environment=EXIT_CONFIRM_SECONDS=2
 ExecStart=/usr/bin/python3 app.py
 Restart=on-failure
 RestartSec=3

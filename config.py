@@ -28,15 +28,25 @@ if _enabled_ids:
     _ids = {int(x) for x in _enabled_ids.split(",")}
     SLOTS = [s for s in SLOTS if s["id"] in _ids]
 
-# A slot counts as "occupied" when the measured distance drops below this.
+# A slot counts as "an object is in range" when the measured distance drops
+# below this.
 OCCUPIED_THRESHOLD_M = float(os.environ.get("OCCUPIED_THRESHOLD_M", "0.5"))
 
-# HC-SR04 max reliable range is ~4m; gpiozero clamps readings above this to max_distance.
+# HC-SR04 max reliable range is ~4m; readings beyond this are discarded.
 MAX_DISTANCE_M = float(os.environ.get("MAX_DISTANCE_M", "2.0"))
 
-# How many consecutive same-state readings are needed before flipping
-# occupied/free, to filter out single noisy ultrasonic readings.
-DEBOUNCE_READINGS = int(os.environ.get("DEBOUNCE_READINGS", "3"))
+# An object must be continuously within OCCUPIED_THRESHOLD_M for this many
+# seconds before the slot is marked occupied and the repair timer starts.
+# Filters out someone briefly walking past the sensor.
+CONFIRM_SECONDS = float(os.environ.get("CONFIRM_SECONDS", "20"))
+
+# Once occupied, the object must be continuously out of range for this many
+# seconds before the slot is marked free again (timer resets to 0). Short,
+# just enough to filter single noisy readings.
+EXIT_CONFIRM_SECONDS = float(os.environ.get("EXIT_CONFIRM_SECONDS", "2"))
+
+# How many past repair durations to keep and show per slot.
+HISTORY_SIZE = int(os.environ.get("HISTORY_SIZE", "3"))
 
 # How often (seconds) the background thread polls all sensors.
 POLL_INTERVAL_S = float(os.environ.get("POLL_INTERVAL_S", "0.5"))

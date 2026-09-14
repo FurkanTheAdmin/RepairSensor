@@ -110,9 +110,19 @@ değerleri gerçek olmaz.)
 
 ## Ayarlar
 
-[config.py](config.py) içinden değiştirilebilir (veya aynı isimde ortam
-değişkeni ile override edilebilir):
+[config.py](config.py) içindeki varsayılanlar, aynı isimde bir ortam
+değişkeniyle kod değiştirmeden override edilebilir. En pratik yol,
+[deploy/slot-monitor.service](deploy/slot-monitor.service) içindeki
+`Environment=` satırlarını düzenleyip şunu çalıştırmak:
 
-- `OCCUPIED_THRESHOLD_M`: bu mesafenin altı "dolu" sayılır (varsayılan 0.5m)
-- `DEBOUNCE_READINGS`: durum değişmeden önce gereken ardışık aynı-yönlü okuma sayısı
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart slot-monitor
+```
+
+- `OCCUPIED_THRESHOLD_M`: bu mesafenin altı "araç var" sayılır (varsayılan 0.5m / 50cm)
+- `CONFIRM_SECONDS`: aracın sayaç başlamadan önce eşiğin altında **kesintisiz** kaç saniye görülmesi gerektiği (varsayılan 20s) — kısa süreli geçişleri (biri önünden yürüyüp geçmesi gibi) filtreler
+- `EXIT_CONFIRM_SECONDS`: slot boşaldığında sayacın sıfırlanması için aracın eşiğin dışında kesintisiz kaç saniye görülmesi gerektiği (varsayılan 2s) — tek karelik ölçüm gürültüsünü filtreler
+- `HISTORY_SIZE`: her slotun altında kaç geçmiş tamir süresinin tutulup gösterileceği (varsayılan 3) — bu geçmiş bellekte tutulur, servis yeniden başlarsa sıfırlanır
 - `POLL_INTERVAL_S`: sensörlerin ne sıklıkla okunacağı
+- `MAX_DISTANCE_M`: bu mesafenin üzerindeki okumalar geçersiz sayılır
