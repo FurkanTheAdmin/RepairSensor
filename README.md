@@ -33,8 +33,8 @@ Trixie üzerinde sistem pip'i "externally managed" olduğu için mutlaka bir
 sanal ortam (venv) kullanın.
 
 ```bash
-# 1. GitHub'daki repoyu klonla (repo adresini push ettikten sonra buraya yazacağız)
-git clone <REPO_URL> /home/pi/Raspberry
+# 1. GitHub'daki repoyu klonla
+git clone https://github.com/FurkanTheAdmin/RepairSensor.git /home/pi/Raspberry
 cd /home/pi/Raspberry
 
 # 2. Sanal ortam oluştur ve bağımlılıkları kur
