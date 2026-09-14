@@ -7,8 +7,5 @@ SERVICE="slot-monitor"
 
 cd "$REPO_DIR"
 git pull
-source .venv/bin/activate
-pip install -r requirements.txt
-deactivate
 sudo systemctl restart "$SERVICE"
 sudo systemctl status "$SERVICE" --no-pager

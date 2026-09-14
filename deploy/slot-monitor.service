@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/Raspberry
-ExecStart=/home/pi/Raspberry/.venv/bin/python app.py
+ExecStart=/usr/bin/python3 app.py
 Restart=on-failure
 RestartSec=3
 

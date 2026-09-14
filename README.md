@@ -29,30 +29,35 @@ Varsayılan pin eşlemesi ([config.py](config.py) içinde değiştirilebilir):
 
 ## Raspberry Pi ilk kurulum (SSH erişimi olan kişi yapacak)
 
-Trixie üzerinde sistem pip'i "externally managed" olduğu için mutlaka bir
-sanal ortam (venv) kullanın.
+Trixie'de sistem pip'i "externally managed" olduğu için `gpiozero`/`lgpio`/
+`flask` **apt üzerinden** kurulur (pip ile `lgpio` derlemek build-essential +
+swig gerektirir, apt paketi bu derlemeyi atlar). Bu yüzden venv gerekmiyor.
 
 ```bash
+# 0. Paketleri güncelle ve gerekenleri kur
+sudo apt update
+sudo apt install -y git python3-gpiozero python3-lgpio python3-flask
+
 # 1. GitHub'daki repoyu klonla
 git clone https://github.com/FurkanTheAdmin/RepairSensor.git /home/pi/Raspberry
 cd /home/pi/Raspberry
 
-# 2. Sanal ortam oluştur ve bağımlılıkları kur
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-deactivate
-
-# 3. Servis olarak kur (arka planda çalışsın, Pi yeniden başlayınca otomatik açılsın)
+# 2. Servis olarak kur (arka planda çalışsın, Pi yeniden başlayınca otomatik açılsın)
 sudo cp deploy/slot-monitor.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now slot-monitor
 
-# 4. Durumu kontrol et
+# 3. Durumu kontrol et
 sudo systemctl status slot-monitor
 ```
 
 Web arayüzü `http://<pi-ip>:8080` adresinde açılır.
+
+Not: `/home/pi/Raspberry` ve `User=pi` satırları, imaj yazarken kullanıcı adı
+olarak `pi` seçtiğinizi varsayar. Farklı bir kullanıcı adı belirlediyseniz
+[deploy/slot-monitor.service](deploy/slot-monitor.service) içindeki `User=`
+ve `WorkingDirectory=` satırlarını ve yukarıdaki `git clone` hedef yolunu ona
+göre değiştirin.
 
 ## Kod güncellendiğinde Pi'de nasıl "pull" edilir
 
@@ -67,8 +72,8 @@ cd /home/pi/Raspberry
 bash deploy/update.sh
 ```
 
-Bu script sırasıyla: `git pull` yapar, `requirements.txt`'i günceller ve
-`slot-monitor` servisini yeniden başlatır.
+Bu script sırasıyla: `git pull` yapar ve `slot-monitor` servisini yeniden
+başlatır.
 
 **Manuel adımlar (script kullanmadan aynısı):**
 
@@ -76,12 +81,12 @@ Bu script sırasıyla: `git pull` yapar, `requirements.txt`'i günceller ve
 ssh pi@<pi-ip>
 cd /home/pi/Raspberry
 git pull
-source .venv/bin/activate
-pip install -r requirements.txt
-deactivate
 sudo systemctl restart slot-monitor
 sudo systemctl status slot-monitor
 ```
+
+(`requirements.txt`'e yeni bir bağımlılık eklenirse, onu da apt ile
+kurmanız gerekir — bkz. yukarıdaki ilk kurulum adımı.)
 
 Not: `git pull` yerel değişiklikler varsa (Pi üzerinde elle bir şey
 düzenlendiyse) çakışabilir. Pi'deki kopya sadece deploy hedefi olarak
