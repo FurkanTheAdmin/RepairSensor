@@ -13,7 +13,39 @@ import config
 # Must be set before gpiozero is imported.
 os.environ.setdefault("GPIOZERO_PIN_FACTORY", config.PIN_FACTORY)
 
-from gpiozero import DistanceSensor  # noqa: E402
+from gpiozero import DigitalInputDevice, DigitalOutputDevice  # noqa: E402
+
+SPEED_OF_SOUND_M_S = 343.0
+TRIGGER_PULSE_S = 0.00001  # 10us, per HC-SR04 datasheet
+
+
+def _measure_once(trig: DigitalOutputDevice, echo: DigitalInputDevice, timeout_s: float):
+    """Trigger a single HC-SR04 pulse and time the echo. Returns distance in
+    meters, or None if no echo was received within timeout_s.
+
+    Done as one manual, blocking measurement per sensor (instead of
+    gpiozero's DistanceSensor, which runs a free-running background thread
+    per sensor) so that reading 4 sensors in sequence doesn't have their
+    background threads fight each other for CPU/timing accuracy - that
+    contention was making real readings jitter wildly / freeze.
+    """
+    trig.on()
+    time.sleep(TRIGGER_PULSE_S)
+    trig.off()
+
+    deadline = time.perf_counter() + timeout_s
+    while echo.value == 0:
+        if time.perf_counter() > deadline:
+            return None
+    start = time.perf_counter()
+
+    deadline = time.perf_counter() + timeout_s
+    while echo.value == 1:
+        if time.perf_counter() > deadline:
+            return None
+    end = time.perf_counter()
+
+    return (end - start) * SPEED_OF_SOUND_M_S / 2
 
 
 @dataclass
@@ -45,13 +77,14 @@ class SlotMonitor:
         self._lock = threading.Lock()
         self._states = {}
         self._sensors = {}
+        # Timeout for one echo wait: time for sound to cover 2x max_distance,
+        # plus margin for scheduling jitter.
+        self._timeout_s = (2 * config.MAX_DISTANCE_M / SPEED_OF_SOUND_M_S) + 0.02
         for slot in slots_config:
             self._states[slot["id"]] = SlotState(id=slot["id"], name=slot["name"])
-            self._sensors[slot["id"]] = DistanceSensor(
-                echo=slot["echo"],
-                trigger=slot["trig"],
-                max_distance=config.MAX_DISTANCE_M,
-                queue_len=5,
+            self._sensors[slot["id"]] = (
+                DigitalOutputDevice(slot["trig"], initial_value=False),
+                DigitalInputDevice(slot["echo"]),
             )
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -62,8 +95,9 @@ class SlotMonitor:
     def stop(self):
         self._stop.set()
         self._thread.join(timeout=2)
-        for sensor in self._sensors.values():
-            sensor.close()
+        for trig, echo in self._sensors.values():
+            trig.close()
+            echo.close()
 
     def get_states(self):
         with self._lock:
@@ -71,10 +105,12 @@ class SlotMonitor:
 
     def _run(self):
         while not self._stop.is_set():
-            for sid, sensor in self._sensors.items():
+            for sid, (trig, echo) in self._sensors.items():
                 try:
-                    distance_m = sensor.distance
+                    distance_m = _measure_once(trig, echo, self._timeout_s)
                 except Exception:
+                    distance_m = None
+                if distance_m is not None and distance_m > config.MAX_DISTANCE_M:
                     distance_m = None
                 self._update_slot(sid, distance_m)
             self._stop.wait(config.POLL_INTERVAL_S)
