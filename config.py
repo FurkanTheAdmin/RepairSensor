@@ -20,6 +20,14 @@ SLOTS = [
     {"id": 4, "name": "Slot 4", "trig": 13, "echo": 19},
 ]
 
+# For testing with fewer than 4 sensors physically wired, restrict which
+# slots are active without editing this file, e.g.:
+#   ENABLED_SLOT_IDS=1 python3 app.py
+_enabled_ids = os.environ.get("ENABLED_SLOT_IDS")
+if _enabled_ids:
+    _ids = {int(x) for x in _enabled_ids.split(",")}
+    SLOTS = [s for s in SLOTS if s["id"] in _ids]
+
 # A slot counts as "occupied" when the measured distance drops below this.
 OCCUPIED_THRESHOLD_M = float(os.environ.get("OCCUPIED_THRESHOLD_M", "0.5"))
 
