@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tamir Slotları</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>Araç Tamir Slotları</h1>
+  <div id="slots" class="slots">
+    {% for slot in slots %}
+    <div class="slot" id="slot-{{ slot.id }}">
+      <h2>{{ slot.name }}</h2>
+      <div class="status">-</div>
+      <div class="timer">-</div>
+      <div class="distance">-</div>
+    </div>
+    {% endfor %}
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

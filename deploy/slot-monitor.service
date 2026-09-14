@@ -1,0 +1,14 @@
+[Unit]
+Description=Repair slot HC-SR04 monitor
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Raspberry
+ExecStart=/home/pi/Raspberry/.venv/bin/python app.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
